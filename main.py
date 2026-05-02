@@ -11,6 +11,7 @@ sys.path.insert(0, str(project_root))
 from modules.job_fetcher   import fetch_all_jobs
 from modules.date_filter   import filter_jobs
 from modules.scorer        import score_jobs
+from modules.company_ratings import enrich_with_ratings, filter_by_rating
 from modules.cover_letter  import generate_cover_letters
 from modules.resume_tailor import tailor_resumes
 from modules.dashboard     import generate_dashboard, save_dashboard
@@ -75,6 +76,16 @@ def run_pipeline():
                           score=j.get("score", 0),
                           score_reason=j.get("score_reason", ""))
 
+    # Enrich with Glassdoor ratings and filter low-rated companies
+    min_rating = prefs.get('job_preferences',{}).get('min_glassdoor_rating',0)
+    if min_rating:
+        all_found = db.get_jobs(status='suitable')
+        enriched  = enrich_with_ratings(all_found, min_rating, str(data_dir/'jobs.db'))
+        for j in (x for x in enriched if x):
+            db.update_job(j['job_url'], glassdoor_rating=j.get('glassdoor_rating'))
+            reason = j.get('filter_reason') or ''
+            if reason.startswith('glassdoor'):
+                db.update_job(j['job_url'], status='skipped', score_reason=reason)
     suitable = sorted(db.get_jobs(status="suitable"),
                       key=lambda j: j.get("score") or 0, reverse=True)
     logger.info(f"      {len(suitable)} suitable jobs (score >= {prefs['job_preferences']['min_suitability_score']})")
@@ -83,8 +94,9 @@ def run_pipeline():
         logger.info("No suitable jobs found this run.")
     else:
         # 4. Tailor resume + cover letter
-        logger.info(f"[4/4] Tailoring {len(suitable)} resumes & cover letters with Gemini...")
-        suitable = tailor_resumes(suitable, profile, prefs)
+        logger.info(f"[4/4] Generating {len(suitable)} cover letters (resumes tailored on-demand)...")
+        # Tailoring moved to on-demand in /api/apply — runs only for approved jobs
+    # suitable = tailor_resumes(suitable, profile, prefs)
         suitable = generate_cover_letters(suitable, profile, prefs)
         for j in suitable:
             db.update_job(j["job_url"],
@@ -105,7 +117,7 @@ def run_pipeline():
 
     # Launch web UI
     from app import run_server
-    run_server(port=5000, open_browser_auto=True)
+    run_server(port=8080, open_browser_auto=True)
 
 
 def main():
@@ -124,7 +136,7 @@ def main():
         load_dotenv()
         print("\n  Opening web UI with existing jobs from DB...")
         from app import run_server
-        run_server(port=5000, open_browser_auto=True)
+        run_server(port=8080, open_browser_auto=True)
     else:
         parser.print_help()
         print("\nUsage:")

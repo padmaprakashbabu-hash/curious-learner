@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Job Search Agent</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f0f4f8;color:#1a1a2e;font-size:13px}
+body.dark{background:#0a0d12;color:#e2e8f0}
+
+/* Header */
+.hdr{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+body.dark .hdr{background:#111827;border-color:#1f2937}
+.hdr-brand{display:flex;align-items:center;gap:8px}
+.hdr h1{font-size:16px;font-weight:700}.hdr h1 em{color:#3b82f6;font-style:normal}
+.stats-bar{display:flex;gap:0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+body.dark .stats-bar{border-color:#1f2937}
+.stat{padding:6px 16px;text-align:center;border-right:1px solid #e2e8f0;background:#fff}
+.stat:last-child{border-right:none}
+body.dark .stat{background:#111827;border-color:#1f2937}
+.stat .n{font-size:16px;font-weight:800;line-height:1}
+.stat .l{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.sblue .n{color:#3b82f6}.sgreen .n{color:#10b981}.sorange .n{color:#f59e0b}.sred .n{color:#ef4444}
+.hdr-r{display:flex;gap:6px;align-items:center}
+
+/* Toolbar */
+.bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 20px;display:flex;gap:6px;align-items:center}
+body.dark .bar{background:#111827;border-color:#1f2937}
+.fb{padding:4px 12px;border-radius:16px;border:1.5px solid #e2e8f0;background:transparent;font-size:11px;font-weight:500;cursor:pointer;color:#6b7280;transition:all .12s}
+.fb:hover,.fb.on{background:#3b82f6;color:#fff;border-color:#3b82f6}
+body.dark .fb{border-color:#374151;color:#9ca3af}
+body.dark .fb:hover,body.dark .fb.on{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.sep{flex:1}
+.srch{padding:5px 12px;border-radius:16px;border:1.5px solid #e2e8f0;font-size:11px;background:#f8fafc;color:#1a1a2e;outline:none;width:220px}
+body.dark .srch{background:#1f2937;border-color:#374151;color:#e2e8f0}
+.cnt{font-size:11px;color:#9ca3af;white-space:nowrap}
+
+/* Table wrapper */
+.wrap{padding:12px 20px 40px}
+.tbl-wrap{border-radius:10px;overflow:hidden;box-shadow:0 1px 12px rgba(0,0,0,.08)}
+table{width:100%;border-collapse:collapse;background:#fff}
+body.dark table{background:#111827}
+thead{background:#f8fafc;border-bottom:2px solid #e2e8f0}
+body.dark thead{background:#0f172a;border-color:#1f2937}
+th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:#3b82f6}
+th .arr{margin-left:3px;font-size:9px;opacity:.4}
+th.sorted .arr{opacity:1;color:#3b82f6}
+td{padding:0;border-bottom:1px solid #f1f5f9;vertical-align:top}
+body.dark td{border-color:#1f2937}
+.datarow:hover td{background:#f8fafc}
+body.dark .datarow:hover td{background:#0f172a}
+.datarow td .inner{padding:10px 12px}
+
+/* Score cell */
+.sc-cell{width:60px;text-align:center}
+.sc{display:inline-block;font-size:12px;font-weight:800;padding:4px 0;width:42px;text-align:center;border-radius:8px}
+.sch{background:#dcfce7;color:#15803d}.scm{background:#fef9c3;color:#a16207}.scl{background:#f3f4f6;color:#4b5563}
+body.dark .sch{background:#14532d;color:#86efac}
+body.dark .scm{background:#713f12;color:#fde68a}
+body.dark .scl{background:#1f2937;color:#9ca3af}
+
+/* Role cell */
+.role-cell{min-width:160px;max-width:200px}
+.role-name{font-weight:600;font-size:12px;color:#1e293b;line-height:1.3;margin-bottom:2px}
+body.dark .role-name{color:#f1f5f9}
+.role-chip{display:inline-block;font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;margin-top:3px}
+.cs{background:#eff6ff;color:#1d4ed8}.ca{background:#dcfce7;color:#15803d}
+.car{background:#fef9c3;color:#92400e}.csk{background:#f3f4f6;color:#6b7280}
+body.dark .cs{background:#1e3a5f;color:#93c5fd}
+body.dark .ca{background:#14532d;color:#86efac}
+
+/* Company cell */
+.co-cell{min-width:180px;max-width:220px}
+.co-name{font-weight:600;font-size:12px;color:#3b82f6;margin-bottom:3px}
+.co-desc{font-size:10.5px;color:#6b7280;line-height:1.4}
+body.dark .co-desc{color:#9ca3af}
+
+/* Location cell */
+.loc-cell{min-width:100px;max-width:130px}
+.loc-tag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:3px 8px;border-radius:12px;font-weight:500;white-space:nowrap}
+.loc-remote{background:#eff6ff;color:#1d4ed8}
+.loc-blr{background:#fdf4ff;color:#7e22ce}
+.loc-india{background:#f0fdf4;color:#15803d}
+.loc-other{background:#f3f4f6;color:#6b7280}
+body.dark .loc-remote{background:#1e3a5f;color:#93c5fd}
+body.dark .loc-blr{background:#3b0764;color:#d8b4fe}
+body.dark .loc-india{background:#14532d;color:#86efac}
+.src-tag{font-size:9px;color:#9ca3af;margin-top:4px}
+.days{font-size:9px;color:#9ca3af;margin-top:2px}
+
+/* Relevance cell */
+.rel-cell{min-width:220px;max-width:280px}
+.rel-text{font-size:10.5px;color:#374151;line-height:1.5}
+body.dark .rel-text{color:#cbd5e1}
+
+/* Actions cell */
+.act-cell{min-width:160px;white-space:nowrap}
+.acts{display:flex;flex-direction:column;gap:5px;padding:10px 12px}
+.btn{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .12s;white-space:nowrap}
+.bsec{background:#f1f5f9;color:#334155}
+.bsec:hover{background:#e2e8f0}
+body.dark .bsec{background:#1f2937;color:#cbd5e1}
+.bapply{background:#3b82f6;color:#fff;width:100%;justify-content:center}
+.bapply:hover:not([disabled]){background:#2563eb}
+.bapply[disabled]{opacity:.6;cursor:default}
+.bapplied{background:#10b981;color:#fff;width:100%;justify-content:center}
+.baction{background:#f59e0b;color:#fff;width:100%;justify-content:center}
+.berr{background:#ef4444;color:#fff}
+.row-actions{display:flex;gap:5px;margin-bottom:5px}
+
+/* Cover letter expand row */
+.clrow{display:none}
+.clrow.open{display:table-row}
+.clrow td{background:#fafafa;border-bottom:1px solid #e2e8f0}
+body.dark .clrow td{background:#0d1117;border-color:#1f2937}
+.clrow .clinner{padding:12px 12px 12px 72px}
+.cltext{font-size:11px;line-height:1.7;color:#374151;white-space:pre-wrap;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px}
+body.dark .cltext{background:#111827;border-color:#1f2937;color:#cbd5e1}
+.cltarea{width:100%;font-size:11px;line-height:1.7;color:#374151;background:#fff;border:1px solid #3b82f6;border-radius:6px;padding:10px;font-family:inherit;max-height:180px;resize:vertical;display:none}
+body.dark .cltarea{background:#111827;color:#cbd5e1}
+.cledit-btns{margin-top:6px;gap:6px;display:none}
+
+/* Empty */
+.empty{text-align:center;padding:60px;color:#6b7280;background:#fff}
+body.dark .empty{background:#111827}
+.empty h3{font-size:17px;margin-bottom:8px;color:#374151}
+body.dark .empty h3{color:#cbd5e1}
+
+/* Overlay + toast */
+.ovl{position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center}
+body.dark .ovl{background:rgba(10,13,18,.9)}
+.spin{width:38px;height:38px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:sp .7s linear infinite}
+.ovlp{margin-top:10px;font-weight:600;font-size:13px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tst{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .25s;z-index:200;color:#fff;pointer-events:none}
+.tst.on{opacity:1;transform:translateY(0)}
+.tst.ok{background:#10b981}.tst.warn{background:#f59e0b}.tst.err{background:#ef4444}
+.tst.info{background:#3b82f6}
+</style>
+</head>
+<body>
+<div class="ovl" id="ovl"><div class="spin"></div><p class="ovlp" id="ovlmsg">Working...</p></div>
+<div class="tst" id="tst"></div>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <span style="font-size:22px">&#x1F469;&#x200D;&#x1F4BC;</span>
+    <h1><em id="aname">Job Search</em> Agent</h1>
+  </div>
+  <div class="stats-bar">
+    <div class="stat sblue"><div class="n" id="sf">-</div><div class="l">Searched</div></div>
+    <div class="stat sgreen"><div class="n" id="ss">-</div><div class="l">Suitable</div></div>
+    <div class="stat sblue"><div class="n" id="sa">-</div><div class="l">Applied</div></div>
+    <div class="stat sorange"><div class="n" id="sar">-</div><div class="l">Action Needed</div></div>
+    <div class="stat sred"><div class="n" id="sk">-</div><div class="l">Skipped</div></div>
+  </div>
+  <div class="hdr-r">
+    <a href="/api/export" class="btn bsec" style="font-size:11px">&#x1F4E5; Export</a>
+    <button class="btn bsec" style="font-size:11px" onclick="toggleTheme()">&#x1F319;</button>
+  </div>
+</div>
+
+<div class="bar">
+  <button class="fb on" data-f="all">All</button>
+  <button class="fb" data-f="suitable,approved">&#x23F3; Pending</button>
+  <button class="fb" data-f="applied">&#x2705; Applied</button>
+  <button class="fb" data-f="action_required">&#x26A1; Action Needed</button>
+  <button class="fb" data-f="skipped_by_user">Skipped</button>
+  <div class="sep"></div>
+  <span class="cnt" id="cnt"></span>
+  <input class="srch" id="srch" placeholder="&#x1F50D;  Search role or company..." oninput="render()">
+</div>
+
+<div class="wrap">
+ <div class="tbl-wrap">
+  <table>
+   <thead>
+    <tr>
+     <th data-col="score" class="sorted sc-cell">Score<span class="arr">&#x25BC;</span></th>
+     <th data-col="title" class="role-cell">Role<span class="arr"></span></th>
+     <th data-col="company" class="co-cell">Company<span class="arr"></span></th>
+     <th data-col="location" class="loc-cell">Location<span class="arr"></span></th>
+     <th class="rel-cell">Why suitable &amp; role summary</th>
+     <th class="act-cell">Actions</th>
+    </tr>
+   </thead>
+   <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty" id="empt" style="display:none">
+   <h3>No jobs match</h3>
+   <p id="emptmsg">Try a different filter</p>
+  </div>
+ </div>
+</div>
+
+<script>
+var jobs=[], filter='all', sortCol='score', sortDir=-1;
+
+// Helpers
+function eid(u){return encodeURIComponent(u||'');}
+function days(iso){
+  if(!iso)return'?d';
+  var d=Math.floor((Date.now()-new Date(iso))/86400000);
+  return d===0?'Today':d+'d ago';
+}
+function sc(s){return s>=80?'sch':s>=65?'scm':'scl';}
+function chip(st){
+  var m={applied:'ca Applied',action_required:'car Action',skipped_by_user:'csk Skipped',suitable:'cs Pending',approved:'cs Approved'};
+  var p=(m[st]||'csk '+st).split(' ');
+  return '<span class="role-chip '+p[0]+'">'+p.slice(1).join(' ')+'</span>';
+}
+function locTag(loc){
+  var l=(loc||'').toLowerCase();
+  if(!l||l==='n/a')return '<span class="loc-tag loc-remote">&#x1F310; Remote</span>';
+  if(l.indexOf('remote')>=0||l.indexOf('wfh')>=0||l.indexOf('work from home')>=0)
+    return '<span class="loc-tag loc-remote">&#x1F310; Remote</span>';
+  if(l.indexOf('bangalore')>=0||l.indexOf('bengaluru')>=0||l.indexOf('karnataka')>=0)
+    return '<span class="loc-tag loc-blr">&#x1F3E2; Bangalore</span>';
+  if(l.indexOf('india')>=0)
+    return '<span class="loc-tag loc-india">&#x1F1EE;&#x1F1F3; India</span>';
+  var disp=loc.length>22?loc.slice(0,20)+'…':loc;
+  return '<span class="loc-tag loc-other">&#x1F4CD; '+disp+'</span>';
+}
+function coDesc(j){
+  // Extract first 2 sentences from description as company intro
+  var d=(j.description||'').trim();
+  if(!d)return'';
+  // Split into sentences
+  var sents=d.replace(/\n+/g,' ').split(/(?<=[.!?])\s+/);
+  // First 1-2 sentences up to 160 chars
+  var out='',i=0;
+  while(i<sents.length&&out.length<160){
+    out+=(out?' ':'')+sents[i].trim();
+    i++;
+    if(out.length>=80)break;
+  }
+  return out.length>160?out.slice(0,157)+'…':out;
+}
+function clFn(j){
+  var sl=function(t){return(t||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,40);};
+  return sl(j.company)+'_'+sl(j.title)+'.txt';
+}
+
+function getList(){
+  var q=(document.getElementById('srch').value||'').toLowerCase();
+  var list=jobs.filter(function(j){
+    var fok=filter==='all'||filter.split(',').indexOf(j.status)>=0;
+    var sok=!q||(j.title||'').toLowerCase().indexOf(q)>=0||(j.company||'').toLowerCase().indexOf(q)>=0;
+    return fok&&sok;
+  });
+  list.sort(function(a,b){
+    var av=sortCol==='score'?(a.score||0):(a[sortCol]||'');
+    var bv=sortCol==='score'?(b.score||0):(b[sortCol]||'');
+    if(typeof av==='number')return sortDir*(av-bv);
+    return sortDir*(av+'').localeCompare(bv+'');
+  });
+  return list;
+}
+
+function applyBtnHtml(j){
+  var eu=eid(j.job_url);
+  if(j.status==='applied')
+    return '<button class="btn bapplied" disabled>&#x2705; Applied</button>';
+  if(j.status==='action_required')
+    return '<a class="btn baction" href="'+(j.apply_url||'#')+'" target="_blank">&#x26A1; Apply Manually</a>';
+  if(j.status==='skipped_by_user')
+    return '<button class="btn bsec" disabled>Skipped</button>';
+  return '<button class="btn bapply" data-eu="'+eu+'">Apply &#x1F680;</button>';
+}
+
+function render(){
+  var list=getList();
+  var tbody=document.getElementById('tbody');
+  var empt=document.getElementById('empt');
+  document.getElementById('cnt').textContent=list.length+' jobs';
+  if(!list.length){
+    tbody.innerHTML='';
+    empt.style.display='block';
+    document.getElementById('emptmsg').textContent=
+      filter==='all'?'Run --find to search for jobs':'Try a different filter';
+    return;
+  }
+  empt.style.display='none';
+  var rows='';
+  list.forEach(function(j){
+    var eu=eid(j.job_url), score=j.score||0;
+    var hasCL=!!(j.cover_letter);
+    var hasCV=!!j.tailored_resume_path;
+    var cvBtn=hasCV?'<a class="btn bsec" href="/output/tailored_resumes/'+j.tailored_resume_path.split('/').pop()+'" target="_blank">&#x1F4D1; Resume</a>':'';
+    var src=(j.source||'').replace(/greenhouse\/.*/,'greenhouse').replace(/lever\/.*/,'lever');
+
+    rows+='<tr class="datarow" id="r-'+eu+'">';
+
+    // Score
+    rows+='<td class="sc-cell"><div class="inner" style="text-align:center">';
+    rows+='<div class="sc '+sc(score)+'">'+score+'</div>';
+    rows+=chip(j.status);
+    rows+='</div></td>';
+
+    // Role
+    rows+='<td class="role-cell"><div class="inner">';
+    rows+='<div class="role-name">'+(j.title||'')+'</div>';
+    rows+='</div></td>';
+
+    // Company + description
+    rows+='<td class="co-cell"><div class="inner">';
+    rows+='<div class="co-name">'+(j.company||'')+'</div>';
+    var cdesc=coDesc(j); if(cdesc)rows+='<div class="co-desc">'+cdesc+'</div>';
+    rows+='</div></td>';
+
+    // Location
+    rows+='<td class="loc-cell"><div class="inner">';
+    rows+=locTag(j.location||'');
+    rows+='<div class="src-tag">'+src+'</div>';
+    var gr=j.glassdoor_rating;
+    if(gr)rows+='<div style="font-size:10px;margin-top:3px"><span style="color:'+(gr>=4?'#10b981':gr>=3.2?'#f59e0b':'#ef4444')+'">&#11088; '+gr.toFixed(1)+'/5</span></div>';
+    else rows+='<div style="font-size:9px;color:#9ca3af;margin-top:2px">&#x2014;</div>';  // clean dash
+    rows+='<div class="days">'+days(j.date_posted)+'</div>';
+    rows+='</div></td>';
+
+    // Relevance / why suitable
+    rows+='<td class="rel-cell"><div class="inner">';
+    rows+='<div class="rel-text">'+(j.score_reason||'')+'</div>';
+    rows+='</div></td>';
+
+    // Actions
+    rows+='<td class="act-cell"><div class="acts">';
+    rows+='<div class="row-actions">';
+    rows+='<button class="btn bsec clbtn" data-eu="'+eu+'">'+(hasCL?'&#x1F4DD;':'&#x1F4DD;')+' CL</button>';
+    rows+=cvBtn;
+    rows+='</div>';
+    rows+=applyBtnHtml(j);
+    rows+='</div></td>';
+
+    rows+='</tr>';
+
+    // Cover letter expandable row
+    rows+='<tr class="clrow" id="cl-'+eu+'"><td colspan="6"><div class="clinner">';
+    rows+='<div class="cltext" id="clt-'+eu+'">'+(j.cover_letter||'Loading...')+'</div>';
+    rows+='<textarea class="cltarea" id="cla-'+eu+'"></textarea>';
+    rows+='<div class="cledit-btns" id="clb-'+eu+'">';
+    rows+='<button class="btn bsec" data-save="'+eu+'">&#x1F4BE; Save</button>';
+    rows+='<button class="btn bsec" data-cancel="'+eu+'">Cancel</button></div>';
+    rows+='<div style="margin-top:6px;display:flex;gap:6px">';
+    rows+='<button class="btn bsec" data-edit="'+eu+'" style="font-size:10px">Edit</button>';
+    rows+='</div></div></td></tr>';
+  });
+  tbody.innerHTML=rows;
+}
+
+function renderStats(s){
+  if(s.applicant_name&&s.applicant_name!=='Job Hunter')
+    document.getElementById('aname').textContent=s.applicant_name;
+  document.getElementById('sf').textContent=s.total_fetched||'-';
+  document.getElementById('ss').textContent=s.total_suitable||'-';
+  document.getElementById('sa').textContent=s.total_applied||'-';
+  document.getElementById('sar').textContent=s.total_action_required||'-';
+  document.getElementById('sk').textContent=s.total_skipped||'-';
+}
+
+async function loadData(){
+  try{
+    var r=await fetch('/api/jobs');
+    var d=await r.json();
+    jobs=Array.isArray(d)?d:[];
+    render();
+  }catch(e){console.error('jobs',e);}
+  try{
+    var r2=await fetch('/api/stats');
+    renderStats(await r2.json());
+  }catch(e){console.error('stats',e);}
+}
+
+// Sort headers
+document.querySelectorAll('th[data-col]').forEach(function(th){
+  th.addEventListener('click',function(){
+    var col=th.getAttribute('data-col');
+    if(sortCol===col){sortDir*=-1;}else{sortCol=col;sortDir=-1;}
+    document.querySelectorAll('th').forEach(function(h){
+      h.classList.remove('sorted');
+      if(h.querySelector('.arr'))h.querySelector('.arr').innerHTML='';
+    });
+    th.classList.add('sorted');
+    if(th.querySelector('.arr'))
+      th.querySelector('.arr').innerHTML=sortDir===-1?'&#x25BC;':'&#x25B2;';
+    render();
+  });
+});
+
+// Filter tabs
+document.querySelectorAll('.fb').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.fb').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    filter=b.getAttribute('data-f');
+    render();
+  });
+});
+
+// Event delegation
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-eu],[data-edit],[data-cancel],[data-save],[data-f]');
+  if(!t||t.classList.contains('fb'))return;
+
+  var eu=t.getAttribute('data-eu');
+
+  // CL toggle
+  if(eu&&t.classList.contains('clbtn')){
+    var row=document.getElementById('cl-'+eu);
+    var open=row.classList.contains('open');
+    // close all others
+    document.querySelectorAll('.clrow.open').forEach(function(r){
+      if(r.id!=='cl-'+eu)r.classList.remove('open');
+    });
+    row.classList.toggle('open',!open);
+    if(!open){
+      var txt=document.getElementById('clt-'+eu);
+      var j=jobs.find(function(x){return eid(x.job_url)===eu;});
+      if(j&&j.cover_letter){
+        txt.textContent=j.cover_letter;
+        document.getElementById('cla-'+eu).value=j.cover_letter;
+      } else if(j){
+        fetch('/api/cover_letter/'+clFn(j))
+          .then(function(r){return r.ok?r.text():'No cover letter yet.'})
+          .then(function(cl){
+            txt.textContent=cl;
+            document.getElementById('cla-'+eu).value=cl;
+          }).catch(function(){txt.textContent='Could not load.';});
+      }
+    }
+    return;
+  }
+
+  // Edit CL
+  var editEu=t.getAttribute('data-edit');
+  if(editEu){
+    document.getElementById('clt-'+editEu).style.display='none';
+    document.getElementById('cla-'+editEu).style.display='block';
+    document.getElementById('clb-'+editEu).style.display='flex';
+    return;
+  }
+  var cancelEu=t.getAttribute('data-cancel');
+  if(cancelEu){
+    document.getElementById('clt-'+cancelEu).style.display='block';
+    document.getElementById('cla-'+cancelEu).style.display='none';
+    document.getElementById('clb-'+cancelEu).style.display='none';
+    return;
+  }
+  var saveEu=t.getAttribute('data-save');
+  if(saveEu){
+    var txt2=document.getElementById('cla-'+saveEu).value;
+    var jj=jobs.find(function(x){return eid(x.job_url)===saveEu;});
+    fetch('/api/save_cover_letter',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({job_url:jj?jj.job_url:decodeURIComponent(saveEu),cover_letter:txt2})})
+      .then(function(){
+        document.getElementById('clt-'+saveEu).textContent=txt2;
+        document.getElementById('clt-'+saveEu).style.display='block';
+        document.getElementById('cla-'+saveEu).style.display='none';
+        document.getElementById('clb-'+saveEu).style.display='none';
+        toast('Cover letter saved','ok');
+      }).catch(function(){toast('Save failed','err');});
+    return;
+  }
+
+  // Apply
+  if(eu&&t.classList.contains('bapply')){
+    t.disabled=true; t.textContent='Applying...';
+    showOvl('Tailoring resume for this role...');
+    var job=jobs.find(function(x){return eid(x.job_url)===eu;});
+    fetch('/api/apply',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({job_url:job?job.job_url:decodeURIComponent(eu)})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        hideOvl();
+        if(d.status==='applied'||d.message==='already applied'){
+          t.outerHTML='<button class="btn bapplied" disabled>&#x2705; Applied</button>';
+          toast('Application submitted with tailored resume!','ok');
+        } else if(d.status==='action_required'){
+          var a=document.createElement('a');
+          a.className='btn baction'; a.href=d.apply_url||'#'; a.target='_blank';
+          a.textContent='Apply Manually'; t.parentNode.replaceChild(a,t);
+          toast('Manual apply — link opened','warn');
+        } else {
+          t.textContent='Error'; t.className='btn berr'; t.disabled=false;
+          toast(d.error||'Error applying','err');
+        }
+        setTimeout(loadData,1000);
+      }).catch(function(){hideOvl();t.textContent='Retry';t.disabled=false;toast('Network error','err');});
+    return;
+  }
+});
+
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');
+
+function showOvl(m){document.getElementById('ovlmsg').textContent=m||'Working...';document.getElementById('ovl').style.display='flex';}
+function hideOvl(){document.getElementById('ovl').style.display='none';}
+var tt;
+function toast(m,t){
+  var el=document.getElementById('tst');
+  el.textContent=m; el.className='tst on '+(t||'info');
+  clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},5000);
+}
+
+loadData();
+setInterval(loadData,30000);
+</script>
+</body>
+</html>
