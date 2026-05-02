@@ -1,0 +1,28 @@
+# Job Agent — Priyanka Kumari
+# Install: pip install -r requirements.txt
+
+# Job scraping
+python-jobspy
+requests==2.31.0
+
+# Browser automation (apply engine)
+playwright==1.44.0
+
+# LLM — Anthropic Claude
+google-generativeai>=0.7.0
+
+# HTML templating (dashboard + email)
+jinja2==3.1.4
+
+# Scheduling
+schedule==1.2.2
+
+# Utilities
+python-dotenv==1.0.1
+tenacity==8.3.0
+rich==13.7.1
+tabulate==0.9.0
+
+reportlab>=4.1.0          # PDF resume generation
+
+flask>=3.0.0               # Web UI server

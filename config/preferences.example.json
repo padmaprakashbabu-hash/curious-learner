@@ -1,0 +1,66 @@
+{
+  "job_preferences": {
+    "work_type": "remote",
+    "employment_type": "fulltime",
+    "min_salary_inr_lakhs": 40,
+    "min_salary_usd_annual": 48000,
+    "max_job_age_days": 10,
+    "min_suitability_score": 65
+  },
+  "excluded_companies": [],
+  "excluded_keywords": [
+    "on-site only",
+    "no remote",
+    "must relocate",
+    "US citizens only",
+    "requires security clearance"
+  ],
+  "job_boards": {
+    "jobspy": {
+      "enabled": true,
+      "sites": [
+        "indeed",
+        "google"
+      ],
+      "results_per_keyword": 20
+    },
+    "remotive": {
+      "enabled": true,
+      "base_url": "https://remotive.com/api/remote-jobs"
+    },
+    "adzuna": {
+      "enabled": true,
+      "country": "in",
+      "base_url": "https://api.adzuna.com/v1/api/jobs"
+    },
+    "linkedin_enabled": false,
+    "linkedin": {
+      "keyword": "Senior Program Manager remote",
+      "results_wanted": 20,
+      "fetch_description": false,
+      "timeout_seconds": 90
+    }
+  },
+  "apply_settings": {
+    "auto_apply_platforms": [
+      "greenhouse",
+      "lever",
+      "smartrecruiters",
+      "ashby"
+    ],
+    "assisted_apply_platforms": [
+      "linkedin",
+      "indeed",
+      "workday",
+      "icims"
+    ],
+    "email_apply_enabled": true,
+    "cover_letter_max_words": 350,
+    "resume_path": "config/resume.pdf"
+  },
+  "notification": {
+    "daily_digest_time": "08:00",
+    "timezone": "Asia/Kolkata",
+    "send_on_empty_run": false
+  }
+}

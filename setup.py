@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+"""
+🚀 Job Search Agent — Setup Wizard
+Interactive onboarding for new users.
+"""
+
+import os
+import sys
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+# ANSI color codes
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+CYAN = '\033[96m'
+BOLD = '\033[1m'
+RESET = '\033[0m'
+
+def print_banner():
+    print(f"""
+{CYAN}{BOLD}
+╔══════════════════════════════════════╗
+║  🚀 Job Search Agent — Setup Wizard  ║
+╚══════════════════════════════════════╝
+{RESET}
+""")
+
+def load_existing_env():
+    """Load existing .env values if they exist."""
+    env_path = Path('.env')
+    env_vars = {}
+    if env_path.exists():
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, val = line.split('=', 1)
+                    env_vars[key.strip()] = val.strip()
+    return env_vars
+
+def prompt(label, key, existing_env, is_optional=False):
+    """Prompt user with pre-filled value if it exists."""
+    existing = existing_env.get(key, '')
+    suffix = f" [{existing}]" if existing else ""
+    if is_optional:
+        prompt_text = f"{label}{suffix} (press Enter to skip): "
+    else:
+        prompt_text = f"{label}{suffix}: "
+    
+    user_input = input(prompt_text).strip()
+    return user_input if user_input else existing
+
+def prompt_multiline(label, key, existing_env, is_optional=False):
+    """Prompt for multi-line input (e.g., array of roles)."""
+    existing = existing_env.get(key, '')
+    prompt_text = f"{label} (comma-separated){' [press Enter to skip]' if is_optional else ''}: "
+    user_input = input(prompt_text).strip()
+    return user_input if user_input else existing
+
+def prompt_info(info_text):
+    """Print informational text."""
+    print(f"{YELLOW}ℹ {info_text}{RESET}")
+
+def setup_wizard():
+    print_banner()
+    
+    # Load existing env
+    existing_env = load_existing_env()
+    
+    print(f"{BOLD}Let\'s get you set up!{RESET}\n")
+    
+    # 1. Full name
+    name = prompt(f"{CYAN}1. Full name{RESET}", "APPLICANT_NAME", existing_env)
+    if not name:
+        print(f"{YELLOW}⚠ Name is required{RESET}")
+        return False
+    
+    # 2. Email
+    email = prompt(f"{CYAN}2. Email address{RESET}", "APPLICANT_EMAIL", existing_env)
+    if not email:
+        print(f"{YELLOW}⚠ Email is required{RESET}")
+        return False
+    
+    # 3. Phone
+    phone = prompt(f"{CYAN}3. Phone number{RESET}", "APPLICANT_PHONE", existing_env)
+    if not phone:
+        print(f"{YELLOW}⚠ Phone is required{RESET}")
+        return False
+    
+    # 4. LinkedIn
+    linkedin = prompt(f"{CYAN}4. LinkedIn URL{RESET}", "APPLICANT_LINKEDIN", existing_env)
+    if not linkedin:
+        print(f"{YELLOW}⚠ LinkedIn URL is required{RESET}")
+        return False
+    
+    # 5. Target job role
+    print(f"\n{CYAN}5. Target job role(s){RESET}")
+    print(f"   Example: Senior Program Manager, Product Manager, etc.")
+    target_roles = prompt_multiline("   Enter roles", "TARGET_ROLES", existing_env)
+    if not target_roles:
+        print(f"{YELLOW}⚠ At least one target role is required{RESET}")
+        return False
+    
+    # 6. Resume PDF path
+    print(f"\n{CYAN}6. Resume PDF path{RESET}")
+    resume_path = prompt("   Path to your resume (e.g., ~/Documents/resume.pdf)", "RESUME_PATH", existing_env, is_optional=True)
+    
+    # 7. Min salary
+    min_salary = prompt(f"\n{CYAN}7. Minimum salary (in your currency){RESET}", "MIN_SALARY", existing_env)
+    if not min_salary:
+        min_salary = "0"
+    
+    # 8. Gemini API key
+    print(f"\n{CYAN}8. Google Gemini API Key{RESET}")
+    prompt_info("Get free key at https://aistudio.google.com")
+    gemini_key = prompt("   API Key", "GEMINI_API_KEY", existing_env)
+    if not gemini_key:
+        print(f"{YELLOW}⚠ Gemini API Key is required{RESET}")
+        return False
+    
+    # 9. Gmail App Password
+    print(f"\n{CYAN}9. Gmail App Password (for sending digest emails){RESET}")
+    prompt_info("1. Go to myaccount.google.com → Security")
+    prompt_info("2. Enable 2-Step Verification")
+    prompt_info("3. Search for \'App Passwords\'")
+    prompt_info("4. Select Mail and macOS (or your device)")
+    prompt_info("5. Copy the 16-character password")
+    gmail_pwd = prompt("   Gmail App Password", "GMAIL_APP_PASSWORD", existing_env, is_optional=True)
+    
+    # 10. Adzuna credentials (optional)
+    print(f"\n{CYAN}10. Adzuna Job API (optional){RESET}")
+    prompt_info("Get credentials at www.adzuna.com/api/v1/developer")
+    adzuna_id = prompt("   Adzuna App ID", "ADZUNA_APP_ID", existing_env, is_optional=True)
+    adzuna_key = prompt("   Adzuna App Key", "ADZUNA_APP_KEY", existing_env, is_optional=True)
+    
+    print(f"\n{BOLD}Configuring files...{RESET}\n")
+    
+    # Write .env file
+    env_content = f"""# Job Search Agent — Environment Configuration
+# Generated by setup.py
+
+# LLM — Google Gemini (free at aistudio.google.com)
+GEMINI_API_KEY={gemini_key}
+GEMINI_MODEL=gemini-2.0-flash
+
+# Applicant Details
+APPLICANT_NAME={name}
+APPLICANT_EMAIL={email}
+GMAIL_SENDER={email}
+DIGEST_RECIPIENT={email}
+APPLICANT_PHONE={phone}
+APPLICANT_LINKEDIN={linkedin}
+
+# Job Search
+TARGET_ROLES={target_roles}
+MIN_SALARY={min_salary}
+
+# Gmail (for digest emails)
+GMAIL_APP_PASSWORD={gmail_pwd if gmail_pwd else ''}
+
+# Adzuna API (optional)
+ADZUNA_APP_ID={adzuna_id if adzuna_id else ''}
+ADZUNA_APP_KEY={adzuna_key if adzuna_key else ''}
+
+# Job Board URLs (comma-separated)
+JOB_BOARD_URLS=https://www.linkedin.com/jobs/search/?keywords=,https://www.indeed.com/jobs?q=
+
+# Scraping
+LINKEDIN_TIMEOUT_SECONDS=90
+INDEED_TIMEOUT_SECONDS=60
+SELENIUM_HEADLESS=true
+"""
+    
+    with open('.env', 'w') as f:
+        f.write(env_content)
+    print(f"{GREEN}✓ Created .env{RESET}")
+    
+    # Create config/profile.json
+    profile_data = {
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "linkedin": linkedin,
+        "target_roles": [r.strip() for r in target_roles.split(',')],
+        "created_at": __import__('datetime').datetime.now().isoformat()
+    }
+    config_dir = Path('config')
+    config_dir.mkdir(exist_ok=True)
+    
+    with open(config_dir / 'profile.json', 'w') as f:
+        json.dump(profile_data, f, indent=2)
+    print(f"{GREEN}✓ Created config/profile.json{RESET}")
+    
+    # Create config/preferences.json
+    preferences_data = {
+        "min_salary": int(min_salary) if min_salary.isdigit() else 0,
+        "include_remote": True,
+        "include_hybrid": True,
+        "exclude_relocation": False,
+        "max_applications_per_day": 50
+    }
+    
+    with open(config_dir / 'preferences.json', 'w') as f:
+        json.dump(preferences_data, f, indent=2)
+    print(f"{GREEN}✓ Created config/preferences.json{RESET}")
+    
+    # Copy resume if provided
+    if resume_path:
+        resume_expanded = os.path.expanduser(resume_path)
+        if os.path.exists(resume_expanded):
+            dest = config_dir / 'resume.pdf'
+            shutil.copy(resume_expanded, dest)
+            print(f"{GREEN}✓ Copied resume to config/resume.pdf{RESET}")
+        else:
+            print(f"{YELLOW}⚠ Resume file not found: {resume_expanded}{RESET}")
+    
+    # Install dependencies
+    print(f"\n{BOLD}Installing dependencies...{RESET}")
+    
+    if os.path.exists('requirements.txt'):
+        print(f"{CYAN}Running: pip install -r requirements.txt{RESET}")
+        result = subprocess.run([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'], 
+                              capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"{GREEN}✓ Dependencies installed{RESET}")
+        else:
+            print(f"{YELLOW}⚠ pip install had issues (may be non-fatal):{RESET}")
+            print(result.stderr[:200])
+    
+    # Install Playwright chromium
+    print(f"{CYAN}Running: playwright install chromium{RESET}")
+    result = subprocess.run([sys.executable, '-m', 'playwright', 'install', 'chromium'],
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"{GREEN}✓ Playwright installed{RESET}")
+    else:
+        print(f"{YELLOW}⚠ Playwright install had issues (may be non-fatal){RESET}")
+    
+    # Test Gemini API
+    print(f"\n{BOLD}Testing Google Gemini API...{RESET}")
+    try:
+        import google.genai
+        client = google.genai.Client(api_key=gemini_key)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents="Say 'hello' in one word"
+        )
+        if response.text:
+            print(f"{GREEN}✓ Gemini API working{RESET}")
+        else:
+            print(f"{YELLOW}⚠ Gemini API returned empty response{RESET}")
+    except Exception as e:
+        print(f"{YELLOW}⚠ Gemini API test failed: {e}{RESET}")
+        return False
+    
+    # Success
+    print(f"""
+{GREEN}{BOLD}
+╔══════════════════════════════════════╗
+║         ✅ Setup Complete!           ║
+╚══════════════════════════════════════╝
+{RESET}
+
+{BOLD}Next steps:{RESET}
+  1. Review config/profile.json and config/preferences.json
+  2. Run the agent:  {CYAN}python main.py --find{RESET}
+  3. Or use the launcher:  {CYAN}./run.sh{RESET}
+
+{YELLOW}Questions? Check the README.md for troubleshooting.{RESET}
+""")
+    
+    return True
+
+if __name__ == '__main__':
+    success = setup_wizard()
+    sys.exit(0 if success else 1)

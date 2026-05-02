@@ -1,0 +1,65 @@
+{
+  "name": "Your Full Name",
+  "email": "your.email@gmail.com",
+  "phone": "+91-XXXXX-XXXXX",
+  "location": "Your City, Country",
+  "linkedin": "https://www.linkedin.com/in/your-profile/",
+  "summary": "Brief professional summary highlighting your key experience and what you're looking for.",
+  "target_roles": [
+    "Senior Program Manager",
+    "Principal Program Manager",
+    "Technical Program Manager",
+    "Senior Project Manager"
+  ],
+  "industries": [
+    "Tech",
+    "SaaS",
+    "FinTech",
+    "E-commerce"
+  ],
+  "total_experience_years": 8,
+  "education": [
+    {
+      "degree": "MBA \u2014 Your Specialization",
+      "institution": "Your University",
+      "year": 2022,
+      "gpa": "8.5/10"
+    }
+  ],
+  "experience": [
+    {
+      "title": "Your Current Title",
+      "company": "Your Current Company",
+      "duration": "Jan 2023 \u2013 Present",
+      "highlights": [
+        "Key achievement 1 with quantified impact",
+        "Key achievement 2 with quantified impact"
+      ]
+    }
+  ],
+  "core_skills": [
+    "Program Management",
+    "Project Management",
+    "Stakeholder Management",
+    "Agile / Scrum",
+    "Product Management",
+    "Business Analytics"
+  ],
+  "tools": [
+    "JIRA",
+    "Confluence",
+    "MS Office",
+    "Figma",
+    "Azure DevOps",
+    "Tableau"
+  ],
+  "certifications": [
+    "PMP",
+    "Six Sigma Green Belt"
+  ],
+  "keywords_for_search": [
+    "Senior Program Manager remote",
+    "Principal Program Manager remote",
+    "Technical Program Manager remote"
+  ]
+}
