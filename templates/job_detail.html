@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Job Details</title><style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,sans-serif;background:#f0f4f8;color:#1a1a2e;font-size:13px}
+.bar{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.back{color:#3b82f6;text-decoration:none;font-size:12px;font-weight:500}
+.jtitle{font-size:15px;font-weight:700;flex:1}
+.sc{font-size:12px;font-weight:800;padding:4px 12px;border-radius:14px}
+.shi{background:#dcfce7;color:#15803d}.smd{background:#fef9c3;color:#a16207}.slo{background:#f3f4f6;color:#6b7280}
+.abtn{padding:8px 18px;background:#3b82f6;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none}
+.wrap{padding:20px 24px 40px;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}
+.ch{padding:14px 18px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700}
+.cb{padding:16px 18px}
+.meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:#6b7280}
+.tag{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tr{background:#eff6ff;color:#1d4ed8}.tb{background:#fdf4ff;color:#7e22ce}.ti{background:#f0fdf4;color:#15803d}
+.jd{font-size:11.5px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:8px;padding:12px;border:1px solid #e2e8f0;max-height:160px;overflow-y:auto}
+.sm{background:none;border:none;color:#3b82f6;font-size:11px;cursor:pointer;padding:4px 0;font-weight:500;display:block;margin-top:4px}
+.reason{font-size:11px;color:#1e3a5f;background:#eff6ff;border-radius:6px;padding:8px 10px;border-left:3px solid #3b82f6;margin-top:8px}
+.kws{margin-top:10px}.kwl{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.kwm{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#92400e;margin:2px;display:inline-block}
+.kwh{font-size:10px;padding:2px 8px;border-radius:10px;background:#dcfce7;color:#15803d;margin:2px;display:inline-block}
+.two{display:grid;grid-template-columns:1fr 260px;gap:0}
+.mn{padding:16px 18px;border-right:1px solid #f1f5f9}.sd{padding:16px 18px;background:#fafafa}
+.ta{width:100%;min-height:200px;font-size:12px;line-height:1.7;color:#374151;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-family:inherit;resize:vertical}
+.fba{width:100%;min-height:56px;font-size:11px;color:#374151;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;font-family:inherit;resize:vertical;margin-top:8px}
+.fbl{font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;margin-top:12px}
+.btn{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:4px;width:100%;justify-content:center;margin-bottom:8px;text-decoration:none;text-align:center}
+.bp{background:#3b82f6;color:#fff}.bs{background:#f1f5f9;color:#334155}.bg{background:#10b981;color:#fff}
+.btn:hover{filter:brightness(.95)}.btn[disabled]{opacity:.6;cursor:default}
+.dv{height:1px;background:#e2e8f0;margin:10px 0}
+.st{font-size:11px;padding:6px;border-radius:6px;margin-top:4px;text-align:center}
+.st.ok{background:#dcfce7;color:#15803d}.st.err{background:#fee2e2;color:#dc2626}.st.ld{background:#eff6ff;color:#3b82f6}
+.sugbox{margin-top:16px;display:none}.sugsec{margin-bottom:14px}
+.sugt{font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.sugb{background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;padding:10px;margin-bottom:8px}
+.sugr{font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px}
+.sugtx{font-size:12px;color:#1e293b;line-height:1.5}
+.sums{font-size:12px;line-height:1.6;color:#1e293b;background:#eff6ff;border-radius:8px;padding:12px;border-left:3px solid #3b82f6}
+.ovl{position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:998;display:none;flex-direction:column;align-items:center;justify-content:center}
+.spin{width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}.ovlp{margin-top:10px;font-weight:600}
+.nt{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;color:#fff;opacity:0;transform:translateY(8px);transition:all .25s;z-index:200;pointer-events:none}
+.nt.on{opacity:1;transform:translateY(0)}.nt.ok{background:#10b981}.nt.warn{background:#f59e0b}.nt.err{background:#ef4444}.nt.info{background:#3b82f6}
+</style></head><body>
+<div class="ovl" id="ovl"><div class="spin"></div><p class="ovlp" id="om">Working...</p></div>
+<div class="nt" id="nt"></div>
+<div class="bar">
+  <a href="/" class="back">&#x2190; Dashboard</a>
+  <div class="jtitle" id="jt">Loading...</div>
+  <span class="sc shi" id="sc" style="display:none"></span>
+  <a class="abtn" id="ab" href="#" target="_blank" style="display:none">Apply &#x1F517;</a>
+</div>
+<div class="wrap">
+  <div class="card"><div class="ch">&#x1F4CB; Job Details</div><div class="cb" id="ji"><p style="color:#9ca3af;padding:20px;text-align:center">Loading job data...</p></div></div>
+  <div class="card">
+    <div class="ch">&#x1F4DD; Cover Letter</div>
+    <div class="two">
+      <div class="mn">
+        <textarea class="ta" id="clt" placeholder="Click Generate Cover Letter..."></textarea>
+        <div class="fbl">&#x1F4AC; Feedback for improvement</div>
+        <textarea class="fba" id="clf" placeholder="e.g. 'More confident tone' / 'Focus on supply chain' / 'Mention IIM MBA'"></textarea>
+      </div>
+      <div class="sd">
+        <button class="btn bp" onclick="genCL()">&#x2728; Generate Cover Letter</button>
+        <button class="btn bs" id="rcl" onclick="regenCL()" disabled>&#x1F504; Regenerate with Feedback</button>
+        <div class="dv"></div>
+        <a class="btn bs" id="vcl" href="#" target="_blank" style="display:none">&#x1F441; View as PDF</a>
+        <a class="btn bg" id="dcl" href="#" download style="display:none">&#x2B07; Download CL PDF</a>
+        <div class="st" id="cls"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch">&#x1F4D1; Resume Keywords &amp; Suggestions for This Role</div>
+    <div class="cb">
+      <p style="font-size:12px;color:#6b7280;margin-bottom:12px">AI-powered per-JD suggestions: exact keywords, bullet rewrites, and summary changes to rank highest for this specific job.</p>
+      <button class="btn bp" style="width:auto;padding:10px 20px" onclick="getSug()">&#x2728; Get Resume Suggestions</button>
+      <div class="st" id="rs" style="margin-top:8px"></div>
+      <div class="sugbox" id="sb">
+        <div class="sugsec"><div class="sugt">&#x1F511; Keywords to Add</div><div id="sk"></div></div>
+        <div class="sugsec" id="ssec"><div class="sugt">&#x1F4DD; Suggested Summary Rewrite</div><div class="sums" id="ss"></div></div>
+        <div class="sugsec"><div class="sugt">&#x270F;&#xFE0F; Bullet Points to Add by Role</div><div id="sbul"></div></div>
+        <div class="sugsec"><div class="sugt">&#x2B50; Skills to Move to Top</div><div id="ssk"></div></div>
+        <button class="btn bs" style="width:auto;font-size:11px" onclick="copyAll()">&#x1F4CB; Copy All Suggestions</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var D=null, eu=decodeURIComponent(window.location.pathname.replace('/job/',''));
+var KW=["agile","scrum","kanban","sprint","backlog","roadmap","okr","kpi","stakeholder","cross-functional","pmp","supply chain","logistics","procurement","warehouse","erp","sap","celonis","tableau","power bi","sql","jira","confluence","figma","azure devops","risk management","change management","budget","gtm","b2b","saas","digital transformation","automation","six sigma","lean","data analysis","program management","project management","tpm","delivery","escalation","vendor"];
+var HAS="supply chain,program management,project management,stakeholder,agile,scrum,jira,confluence,figma,sap,celonis,azure devops,tableau,power bi,six sigma,lean,b2b,saas,gtm,product management,business analytics,delivery,erp,logistics,procurement,vendor,roadmap,kpi,automation,warehouse";
+function lt(l){var s=(l||'').toLowerCase();if(!s||s==='n/a')return'<span class="tag tr">Remote</span>';if(s.indexOf('remote')>=0)return'<span class="tag tr">Remote</span>';if(s.indexOf('bangalore')>=0||s.indexOf('bengaluru')>=0)return'<span class="tag tb">Bangalore</span>';if(s.indexOf('india')>=0)return'<span class="tag ti">India</span>';return'<span class="tag ti">'+l+'</span>';}
+function da(iso){if(!iso)return'?';var d=Math.floor((Date.now()-new Date(iso))/86400000);return d===0?'Today':d+'d ago';}
+function ss(id,m,t){var e=document.getElementById(id);e.textContent=m;e.className='st '+(t||'');}
+function ov(m){document.getElementById('om').textContent=m||'...';document.getElementById('ovl').style.display='flex';}
+function hv(){document.getElementById('ovl').style.display='none';}
+var _t;function toast(m,t){var e=document.getElementById('nt');e.textContent=m;e.className='nt on '+(t||'info');clearTimeout(_t);_t=setTimeout(function(){e.classList.remove('on');},5000);}
+async function loadJob(){
+  try{
+    var url='/api/job/'+encodeURIComponent(eu);
+    var r=await fetch(url);
+    if(!r.ok){document.getElementById('jt').textContent='Error '+r.status+' loading job';return;}
+    D=await r.json();
+    if(D.error){document.getElementById('jt').textContent='Error: '+D.error;return;}
+    document.title=(D.title||'')+' - '+(D.company||'');
+    document.getElementById('jt').textContent=(D.title||'')+' — '+(D.company||'');
+    var sc=document.getElementById('sc'),s=D.score||0;
+    sc.textContent=s+'/100';sc.className='sc '+(s>=90?'shi':s>=80?'smd':'slo');sc.style.display='';
+    var ab=document.getElementById('ab');ab.href=D.apply_url||D.job_url||'#';ab.style.display='';
+    if(D.status==='applied')ab.style.background='#10b981';
+    var jd=(D.description||'').trim(),short=jd.slice(0,300)+(jd.length>300?'...':'');
+    var kwh='';KW.forEach(function(k){if(jd.toLowerCase().indexOf(k)>=0){kwh+=HAS.indexOf(k)>=0?'<span class="kwh">+'+k+'</span>':'<span class="kwm">+'+k+'</span>';}});
+    document.getElementById('ji').innerHTML=
+      '<div class="meta">'+lt(D.location||'')+'<span>'+(D.source||'')+'</span><span>'+da(D.date_posted)+'</span>'+(D.salary_text?'<span>'+D.salary_text+'</span>':'')+'</div>'
+      +(jd?'<div class="jd" id="jdbox">'+short+'</div>':'')
+      +(jd.length>300?'<button class="sm" onclick="tjd()">Show full description</button>':'')
+      +(D.score_reason?'<div class="reason">'+D.score_reason+'</div>':'')
+      +(kwh?'<div class="kws"><div class="kwl">Keywords - orange=add, green=have</div>'+kwh+'</div>':'');
+    if(jd)document.getElementById('jdbox').dataset.full=jd;
+    if(D.cover_letter&&D.cover_letter.trim()){document.getElementById('clt').value=D.cover_letter;document.getElementById('rcl').disabled=false;setCLdl();}
+  }catch(e){document.getElementById('jt').textContent='Failed: '+e.message;console.error(e);}
+}
+function tjd(){var b=document.getElementById('jdbox'),btn=document.querySelector('.sm');if(b.dataset.ex){b.textContent=b.dataset.sh;delete b.dataset.ex;b.style.maxHeight='160px';btn.textContent='Show full description';}else{b.dataset.sh=b.textContent;b.textContent=b.dataset.full;b.dataset.ex='1';b.style.maxHeight='none';btn.textContent='Collapse';}}
+function setCLdl(){var e=encodeURIComponent(D.job_url||'');document.getElementById('vcl').href='/api/download/cl/'+e;document.getElementById('vcl').style.display='flex';document.getElementById('dcl').href='/api/download/cl/'+e;document.getElementById('dcl').style.display='flex';}
+async function genCL(){if(!D)return;ss('cls','Generating...','ld');ov('Generating cover letter...');try{var r=await fetch('/api/generate_cl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_url:D.job_url})});var d=await r.json();hv();if(d.cover_letter){document.getElementById('clt').value=d.cover_letter;document.getElementById('rcl').disabled=false;setCLdl();ss('cls','Generated!','ok');toast('Cover letter ready!','ok');}else{ss('cls',d.error||'Failed','err');toast(d.error||'Failed','err');}}catch(e){hv();ss('cls','Network error','err');}}
+async function regenCL(){if(!D)return;var fb=document.getElementById('clf').value.trim();if(!fb){toast('Enter feedback first','info');return;}ss('cls','Regenerating...','ld');ov('Regenerating...');try{var r=await fetch('/api/regenerate_cl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_url:D.job_url,feedback:fb})});var d=await r.json();hv();if(d.cover_letter){document.getElementById('clt').value=d.cover_letter;document.getElementById('clf').value='';setCLdl();ss('cls','Updated!','ok');toast('Updated!','ok');}else{ss('cls',d.error||'Failed','err');}}catch(e){hv();ss('cls','Error','err');}}
+async function getSug(){if(!D)return;ss('rs','Analysing...','ld');document.getElementById('sb').style.display='none';ov('Getting suggestions...');try{var r=await fetch('/api/resume_suggestions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_url:D.job_url})});var d=await r.json();hv();if(d.error){ss('rs',d.error,'err');return;}var kh='';(d.keywords_to_add||[]).forEach(function(k){kh+='<span class="kwm">+'+k+'</span>';});document.getElementById('sk').innerHTML=kh||'<em style="color:#9ca3af">None</em>';if(d.summary_suggestion){document.getElementById('ss').textContent=d.summary_suggestion;document.getElementById('ssec').style.display='block';}var bh='';(d.bullet_suggestions||[]).forEach(function(b){bh+='<div class="sugb"><div class="sugr">'+b.role+'</div><div class="sugtx">'+b.add_bullet+'</div></div>';});document.getElementById('sbul').innerHTML=bh||'<em style="color:#9ca3af">None</em>';var sh='';(d.skills_to_highlight||[]).forEach(function(s){sh+='<span class="kwh">'+s+'</span>';});document.getElementById('ssk').innerHTML=sh;document.getElementById('sb').style.display='block';ss('rs','Suggestions ready!','ok');toast('Done!','ok');}catch(e){hv();ss('rs','Error: '+e,'err');}}
+function copyAll(){var t='RESUME SUGGESTIONS: '+(D?D.title+' at '+D.company:'')+'\n\nKEYWORDS:\n'+document.getElementById('sk').textContent+'\n\nSUMMARY:\n'+document.getElementById('ss').textContent+'\n\nBULLETS:\n';document.querySelectorAll('.sugb').forEach(function(b){t+=b.textContent.trim()+'\n';});navigator.clipboard.writeText(t).then(function(){toast('Copied!','ok');}).catch(function(){toast('Copy failed','err');});}
+loadJob();
+</script></body></html>

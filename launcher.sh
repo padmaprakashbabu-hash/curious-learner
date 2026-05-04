@@ -1,22 +1,13 @@
 #!/bin/bash
 # Job Search Agent — Smart Launcher
-# Runs --find if last run was >8 hours ago, else just opens the UI
 set -e
 cd "$(dirname "$0")"
 
-# Find python3.11
 PYTHON=""
-for candidate in python3.11 /opt/homebrew/bin/python3.11 /usr/local/bin/python3.11 python3 python; do
-    if command -v "$candidate" &>/dev/null; then
-        PYTHON="$candidate"
-        break
-    fi
+for p in python3.11 /opt/homebrew/bin/python3.11 python3 python; do
+    if command -v "$p" &>/dev/null; then PYTHON="$p"; break; fi
 done
-
-if [ -z "$PYTHON" ]; then
-    osascript -e 'display alert "Python not found" message "Please install Python 3.11 via Homebrew:\nbrew install python@3.11"'
-    exit 1
-fi
+[ -z "$PYTHON" ] && { echo "Python not found. Install: brew install python@3.11"; exit 1; }
 
 # First-time setup check
 if [ ! -f ".env" ]; then
@@ -24,8 +15,15 @@ if [ ! -f ".env" ]; then
     "$PYTHON" setup.py
 fi
 
+# Validate profile is configured
+NAME=$("$PYTHON" -c "import json,os; p=json.load(open('config/profile.json')); print(p.get('name',''))" 2>/dev/null || echo "")
+if [ -z "$NAME" ] || [ "$NAME" = "Your Full Name" ]; then
+    echo "Profile not configured — launching setup wizard..."
+    "$PYTHON" setup.py
+fi
+
 # Smart start: check hours since last run
-HOURS_SINCE=$("$PYTHON" -c "
+HOURS=$("$PYTHON" -c "
 import sqlite3, os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,12 +48,11 @@ else:
         print(999)
 " 2>/dev/null || echo "999")
 
-echo "Hours since last run: $HOURS_SINCE"
-
-if [ "$HOURS_SINCE" -gt 8 ] 2>/dev/null; then
+echo "Configured for: $NAME"
+if [ "$HOURS" -gt 8 ] 2>/dev/null; then
     echo "Running full pipeline (--find)..."
     "$PYTHON" main.py --find
 else
-    echo "Recent run found — opening UI only (--ui)..."
+    echo "Recent run found — opening UI..."
     "$PYTHON" main.py --ui
 fi

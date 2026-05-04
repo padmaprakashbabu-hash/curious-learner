@@ -260,14 +260,10 @@ function getList(){
 }
 
 function applyBtnHtml(j){
-  var eu=eid(j.job_url);
+  var url = j.apply_url || j.job_url || '#';
   if(j.status==='applied')
-    return '<button class="btn bapplied" disabled>&#x2705; Applied</button>';
-  if(j.status==='action_required')
-    return '<a class="btn baction" href="'+(j.apply_url||'#')+'" target="_blank">&#x26A1; Apply Manually</a>';
-  if(j.status==='skipped_by_user')
-    return '<button class="btn bsec" disabled>Skipped</button>';
-  return '<button class="btn bapply" data-eu="'+eu+'">Apply &#x1F680;</button>';
+    return '<a class="btn bapplied" href="'+url+'" target="_blank">&#x2705; Applied — View</a>';
+  return '<a class="btn bapply" href="'+url+'" target="_blank" title="Opens job source page to apply">Apply &#x1F517;</a>';
 }
 
 function render(){
@@ -307,7 +303,7 @@ function render(){
     // Company + description
     rows+='<td class="co-cell"><div class="inner">';
     rows+='<div class="co-name">'+(j.company||'')+'</div>';
-    var cdesc=coDesc(j); if(cdesc)rows+='<div class="co-desc">'+cdesc+'</div>';
+    var cdesc=coDesc(j); if(cdesc&&cdesc!="None"&&cdesc!=="null")rows+='<div class="co-desc">'+cdesc+'</div>';
     rows+='</div></td>';
 
     // Location
@@ -331,6 +327,7 @@ function render(){
     rows+='<button class="btn bsec clbtn" data-eu="'+eu+'">'+(hasCL?'&#x1F4DD;':'&#x1F4DD;')+' CL</button>';
     rows+=cvBtn;
     rows+='</div>';
+    rows+='<a class="btn bsec" href="/job/'+eu+'" title="View full details" style="font-size:11px;padding:5px 10px">📄 Details</a>';
     rows+=applyBtnHtml(j);
     rows+='</div></td>';
 
@@ -358,6 +355,121 @@ function renderStats(s){
   document.getElementById('sa').textContent=s.total_applied||'-';
   document.getElementById('sar').textContent=s.total_action_required||'-';
   document.getElementById('sk').textContent=s.total_skipped||'-';
+}
+
+async function genCL(eu){
+  var txt=document.getElementById('clt-'+eu);
+  txt.innerHTML='<em style="color:#6b7280">Generating cover letter with AI...</em>';
+  var j=jobs.find(function(x){return eid(x.job_url)===eu;});
+  try{
+    var r=await fetch('/api/generate_cl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job_url:j?j.job_url:decodeURIComponent(eu)})});
+    var d=await r.json();
+    if(d.cover_letter){
+      txt.textContent=d.cover_letter;
+      document.getElementById('cla-'+eu).value=d.cover_letter;
+      txt.dataset.loaded='1';
+      toast('Cover letter generated!','ok');
+      // Update button label
+      var btn=document.querySelector('button.clbtn[data-eu="'+eu+'"]');
+      if(btn)btn.innerHTML='&#x1F4DD; CL';
+    } else {
+      txt.innerHTML='<em style="color:#ef4444">'+(d.error||'Generation failed')+'</em>';
+      toast(d.error||'Failed','err');
+    }
+  }catch(e){txt.textContent='Network error';toast('Error','err');}
+}
+
+
+// ── Keyword extraction (zero tokens — pure JS) ─────────────────────────────
+var PM_KEYWORDS = [
+  // PM & Agile
+  "agile","scrum","kanban","sprint","backlog","roadmap","okr","kpi","epics",
+  "user stories","milestone","stakeholder","cross-functional","pmp","prince2",
+  // Supply chain
+  "supply chain","logistics","procurement","warehouse","inventory","erp","sap",
+  "celonis","netsuite","oracle","s&op","demand planning","last-mile","3pl",
+  // Tech tools
+  "jira","confluence","asana","monday","notion","tableau","power bi","sql",
+  "python","excel","figma","miro","azure devops","sharepoint","salesforce",
+  // Skills
+  "risk management","change management","vendor management","budget","p&l",
+  "product launch","go-to-market","gtm","b2b","saas","digital transformation",
+  "automation","process improvement","six sigma","lean","data analysis",
+  "program management","project management","technical program","tpm",
+  "delivery manager","portfolio","engagement","consulting"
+];
+
+function extractKeywords(job) {
+  var text = ((job.description||'') + ' ' + (job.title||'')).toLowerCase();
+  var found = [], missing = [];
+  var profileText = [
+    'supply chain','program management','project management','stakeholder',
+    'agile','scrum','jira','confluence','figma','sap','celonis','azure devops',
+    'tableau','power bi','six sigma','lean','b2b','saas','gtm','product management',
+    'business analytics','operations research','market research','delivery'
+  ].join(',').toLowerCase();
+
+  PM_KEYWORDS.forEach(function(kw) {
+    if(text.indexOf(kw) >= 0) {
+      if(profileText.indexOf(kw) >= 0) found.push(kw);
+      else missing.push(kw);
+    }
+  });
+  return {has: found.slice(0,4), missing: missing.slice(0,5)};
+}
+
+function kwHtml(job) {
+  var kw = extractKeywords(job);
+  var html = '';
+  if(kw.missing.length) {
+    html += '<div style="margin-bottom:4px">';
+    kw.missing.forEach(function(k){
+      html += '<span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;background:#fef3c7;color:#92400e;margin:1px;display:inline-block">+'+k+'</span>';
+    });
+    html += '</div>';
+  }
+  if(kw.has.length) {
+    html += '<div>';
+    kw.has.forEach(function(k){
+      html += '<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:#dcfce7;color:#15803d;margin:1px;display:inline-block">✓'+k+'</span>';
+    });
+    html += '</div>';
+  }
+  return html || '<span style="font-size:9px;color:#9ca3af">—</span>';
+}
+
+
+function handleApply(btn) {
+  var eu = btn.getAttribute('data-eu');
+  if(!eu) return;
+  btn.disabled = true;
+  btn.textContent = 'Applying...';
+  showOvl('Tailoring resume + submitting...');
+  var job = jobs.find(function(x){ return eid(x.job_url||'') === eu; });
+  var jobUrl = job ? job.job_url : decodeURIComponent(eu);
+  fetch('/api/apply', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({job_url: jobUrl})})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      hideOvl();
+      if(d.status==='applied'||d.message==='already applied'){
+        btn.outerHTML='<button class="btn bapplied" disabled>✅ Applied</button>';
+        toast('Application submitted with tailored resume!','ok');
+      } else if(d.status==='action_required'){
+        var a=document.createElement('a');
+        a.className='btn baction'; a.href=d.apply_url||'#'; a.target='_blank';
+        a.textContent='⚡ Apply Manually';
+        btn.parentNode.replaceChild(a, btn);
+        toast('Manual apply needed — link opened','warn');
+      } else {
+        btn.textContent='Error'; btn.className='btn berr'; btn.disabled=false;
+        toast(d.error||'Error applying','err');
+      }
+      setTimeout(loadData, 1000);
+    }).catch(function(e){
+      hideOvl(); btn.textContent='Retry'; btn.disabled=false;
+      toast('Network error — is the server running?','err');
+    });
 }
 
 async function loadData(){
@@ -423,7 +535,7 @@ document.addEventListener('click',function(e){
         document.getElementById('cla-'+eu).value=j.cover_letter;
       } else if(j){
         fetch('/api/cover_letter/'+clFn(j))
-          .then(function(r){return r.ok?r.text():'No cover letter yet.'})
+          .then(function(r){return r.ok?r.text():'__MISSING__'})
           .then(function(cl){
             txt.textContent=cl;
             document.getElementById('cla-'+eu).value=cl;

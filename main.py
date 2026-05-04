@@ -37,7 +37,59 @@ def load_json(p):
     return json.loads(Path(p).read_text(encoding="utf-8"))
 
 
+def _validate_setup():
+    """Check setup is complete before running. Exit gracefully if not."""
+    from pathlib import Path
+    import json, sys
+    ROOT = Path(__file__).parent
+
+    G='\033[92m'; Y='\033[93m'; R='\033[91m'; B='\033[1m'; X='\033[0m'
+    issues = []
+
+    # Check .env exists
+    env = ROOT / ".env"
+    if not env.exists():
+        issues.append(".env file missing")
+    else:
+        content = env.read_text()
+        if "GROQ_API_KEY=" not in content or "your_groq_api_key" in content.lower():
+            issues.append("GROQ_API_KEY not set in .env")
+        if "APPLICANT_NAME=" not in content or not any(
+            line.startswith("APPLICANT_NAME=") and len(line.split("=",1)[1].strip()) > 2
+            for line in content.splitlines()):
+            issues.append("APPLICANT_NAME not set in .env")
+
+    # Check profile.json exists and is filled in
+    profile_path = ROOT / "config" / "profile.json"
+    if not profile_path.exists():
+        issues.append("config/profile.json missing")
+    else:
+        try:
+            p = json.loads(profile_path.read_text())
+            if p.get("name") in ("", "Your Full Name", None):
+                issues.append("profile.json has default placeholder values")
+        except Exception:
+            issues.append("config/profile.json is invalid JSON")
+
+    if issues:
+        print(f"\n{R}{B}Setup incomplete. Please run:{X}")
+        print(f"  {Y}python setup.py{X}\n")
+        print(f"{R}Issues found:{X}")
+        for issue in issues:
+            print(f"  • {issue}")
+        print()
+        sys.exit(1)
+
+    # All good
+    from dotenv import load_dotenv; load_dotenv()
+    import os
+    name = os.environ.get("APPLICANT_NAME","")
+    if name:
+        print(f"  {G}✓ Configured for: {B}{name}{X}")
+
+
 def run_pipeline():
+    _validate_setup()
     """Steps 1-4: Fetch, filter, score, tailor. Populates DB. Then launches web UI."""
     logger = logging.getLogger(__name__)
     load_dotenv()
@@ -97,7 +149,12 @@ def run_pipeline():
         logger.info(f"[4/4] Generating {len(suitable)} cover letters (resumes tailored on-demand)...")
         # Tailoring moved to on-demand in /api/apply — runs only for approved jobs
     # suitable = tailor_resumes(suitable, profile, prefs)
-        suitable = generate_cover_letters(suitable, profile, prefs)
+        needs_cl = [j for j in suitable if not j.get("cover_letter")]
+    if needs_cl:
+        logger.info(f"[CoverLetter] Generating for {len(needs_cl)} new jobs, skipping {len(suitable)-len(needs_cl)} existing")
+        needs_cl = generate_cover_letters(needs_cl, profile, prefs)
+        for j in needs_cl:
+            if j.get("cover_letter"): db.update_job(j["job_url"], cover_letter=j["cover_letter"])
         for j in suitable:
             db.update_job(j["job_url"],
                           tailored_resume_path=j.get("tailored_resume_path", ""),

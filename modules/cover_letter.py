@@ -1,67 +1,84 @@
-"""cover_letter.py — Groq (Llama 3.3 70B) with Gemini fallback"""
+"""cover_letter.py — Quality: llama-3.3-70b-versatile on-demand (~1,200 tokens/letter)"""
 import os, re, logging
 from pathlib import Path
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
-def _slug(t): return re.sub(r"[^a-z0-9]+", "_", (t or "").lower()).strip("_")[:40]
+def _slug(t): return re.sub(r"[^a-z0-9]+","_",(t or "").lower()).strip("_")[:40]
 
 def _build_prompt(job, profile, max_words):
-    jd = (job.get("description") or "")[:3000]
+    jd  = (job.get("description") or "")[:2000]
+    cur = profile.get("experience",[{}])[0]
     highlights = []
-    for exp in profile.get("experience", [])[:3]:
-        for h in exp.get("highlights", [])[:2]:
-            highlights.append(f"- {h} ({exp['title']} @ {exp['company']})")
-    skills = ", ".join(profile.get("core_skills", [])[:8])
-    edu = profile.get("education", [{}])[0]
-    cur = profile.get("experience", [{}])[0]
+    for exp in profile.get("experience",[])[:3]:
+        for h in exp.get("highlights",[])[:2]:
+            highlights.append(f"• {h} ({exp.get('title','')} @ {exp.get('company','')})")
+    edu = profile.get("education",[{}])[0]
     return "\n".join([
-        "You are an expert career coach for tech industry applications.",
-        "Write a tailored cover letter.\n",
+        "You are an expert career coach. Write a tailored, compelling cover letter.",
+        "",
         f"CANDIDATE: {profile.get('name','')}",
-        f"Role: {cur.get('title','')} at {cur.get('company','')}",
-        f"Experience: {profile.get('total_experience_years',10)} years",
+        f"Current: {cur.get('title','')} at {cur.get('company','')}",
         f"Education: {edu.get('degree','')} from {edu.get('institution','')}",
-        f"Skills: {skills}\n",
-        "KEY ACHIEVEMENTS:", "\n".join(highlights),
-        f"\nJOB: {job.get('title')} at {job.get('company')}",
-        f"DESCRIPTION: {jd}\n",
-        "RULES:",
+        f"Key skills: {', '.join(profile.get('core_skills',[])[:8])}",
+        f"Key tools: {', '.join(profile.get('tools',[])[:6])}",
+        "",
+        "STRONGEST ACHIEVEMENTS:",
+        "\n".join(highlights[:4]),
+        "",
+        f"TARGET: {job.get('title')} at {job.get('company')}",
+        f"JOB DESCRIPTION:\n{jd}",
+        "",
+        f"RULES:",
         f"- Max {max_words} words",
-        "- Lead with strongest quantified achievement for this role",
-        "- Reference specific details from the job description",
+        "- Open with the strongest quantified achievement relevant to this role",
+        "- Reference specific requirements from the JD by name",
         "- Highlight supply chain + program management expertise",
-        "- No 'Dear Hiring Manager' opener, no headers",
-        "- Output ONLY the cover letter body",
+        "- Professional but warm tone",
+        "- Do NOT start with 'Dear Hiring Manager' or 'I am writing'",
+        "- Output ONLY the cover letter body, no subject line or headers",
     ])
 
-@retry(stop=stop_after_attempt(2), wait=wait_exponential(min=10, max=30))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=5, max=20))
 def _call_llm(prompt):
+    """Quality model for cover letters — llama-3.3-70b for best output."""
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key:
         try:
             from groq import Groq
-            client = Groq(api_key=groq_key)
-            resp = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4, max_tokens=600,
+            r = Groq(api_key=groq_key).chat.completions.create(
+                model="llama-3.3-70b-versatile",  # Quality model for cover letters
+                messages=[{"role":"user","content":prompt}],
+                temperature=0.5, max_tokens=500,
             )
-            return resp.choices[0].message.content.strip()
+            return r.choices[0].message.content.strip()
         except Exception as e:
-            logger.warning(f"[CoverLetter] Groq failed ({e}), trying Gemini...")
-    from google import genai
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-    return client.models.generate_content(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"), contents=prompt).text.strip()
+            logger.warning(f"[CoverLetter] Groq 70b failed: {e}, trying 8b...")
+            try:
+                from groq import Groq
+                r = Groq(api_key=groq_key).chat.completions.create(
+                    model="llama-3.1-8b-instant",  # Fallback to 8b
+                    messages=[{"role":"user","content":prompt}],
+                    temperature=0.5, max_tokens=500,
+                )
+                return r.choices[0].message.content.strip()
+            except Exception as e2:
+                logger.warning(f"[CoverLetter] Groq 8b failed: {e2}, trying Gemini...")
+    try:
+        from google import genai
+        c = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        return c.models.generate_content(
+            model="gemini-2.0-flash", contents=prompt).text.strip()
+    except Exception as e:
+        raise RuntimeError(f"All LLMs failed: {e}")
 
 def generate_cover_letters(jobs, profile, prefs):
-    max_words = prefs.get("apply_settings", {}).get("cover_letter_max_words", 350)
+    max_words = prefs.get("apply_settings",{}).get("cover_letter_max_words", 320)
     out_dir = Path("output/cover_letters")
     out_dir.mkdir(parents=True, exist_ok=True)
     suitable = [j for j in jobs if j.get("status") == "suitable"]
-    logger.info(f"[CoverLetter] Generating {len(suitable)} letters...")
+    logger.info(f"[CoverLetter] Generating {len(suitable)} letters (quality model)")
     for job in suitable:
         company, title = job.get("company","co"), job.get("title","role")
         try:
@@ -69,9 +86,8 @@ def generate_cover_letters(jobs, profile, prefs):
             job["cover_letter"] = letter
             fp = out_dir / f"{_slug(company)}_{_slug(title)}.txt"
             fp.write_text(letter, encoding="utf-8")
-            logger.info(f"[CoverLetter] OK  {company} — {title} ({len(letter.split())} words)")
+            logger.info(f"[CoverLetter] OK  {company} — {title} ({len(letter.split())}w)")
         except Exception as e:
             logger.error(f"[CoverLetter] Failed {company}: {e}")
             job["cover_letter"] = ""
-    logger.info(f"[CoverLetter] Done — {len(suitable)} letters")
     return jobs
